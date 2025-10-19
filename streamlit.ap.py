@@ -89,8 +89,9 @@ with st.sidebar:
     st.date_input("Date of P/L", value=datetime.today(), key='date_input')
 
     # Use a number input for the Daily P/L
-    pl_input = st.number_input(
-        st.number_input("Daily P/L ($)", step=0.01, format="%.2f", key='pnl_input'), value=0.00)
+    # streamer.ap.py (Final Correct Code)
+    st.number_input("Daily P/L ($)", step=0.01, format="%.2f",
+                    key='pnl_input', value=0.00)
 
 
 # -----------------------------------------------------------
