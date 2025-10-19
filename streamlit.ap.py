@@ -4,15 +4,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(
-    layout="wide", page_title="Stock Trading Equity Curve Tracker")
-
-# --- Connection ---
-# # Use st.secrets to load the JSON key file content
-
-
-# --- Connection ---
-# Use st.secrets to load the JSON key file content
 
 def get_gspread_client():
     creds = Credentials.from_service_account_info(
@@ -28,6 +19,28 @@ gc = get_gspread_client()
 spreadsheet_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
 sh = gc.open_by_key(spreadsheet_url)
 worksheet = sh.worksheet("Sheet1")
+
+st.set_page_config(
+    layout="wide", page_title="Stock Trading Equity Curve Tracker")
+
+# streamer.ap.py (Around Line 24)
+
+
+def log_pl():
+    # 1. Access the data from st.session_state
+    # Make sure you import datetime at the top of your script if you haven't yet!
+    date_to_log = st.session_state['date_input'].strftime('%Y-%m-%d')
+    pnl_to_log = st.session_state['pnl_input']
+
+    # 2. Append the data to the Google Sheet
+    new_data = [date_to_log, pnl_to_log]
+    # Use 'worksheet' as defined on line 19 of your current file
+    worksheet.append_row(new_data, value_input_option='USER_ENTERED')
+
+    # 3. Success and Rerun
+    st.cache_data.clear()
+    st.success("Entry logged successfully and saved to Google Sheet!")
+    st.rerun()
 
 # --- Data Fetching and Caching (Cached for 10 minutes) ---
 
@@ -64,37 +77,19 @@ df = load_data()
 # Sidebar Form (Daily P/L Entry)
 # -----------------------------------------------------------
 
-st.sidebar.title("Daily P/L Entry")
+with st.sidebar:
+    st.header("Daily P/L Entry")
 
-with st.sidebar.form("daily_pl_form", clear_on_submit=True):
-    date_input = st.date_input("Date of P/L", value=pd.to_datetime('today'))
+    # ... your st.date_input and st.number_input here ...
+
+    # The button MUST be here in the sidebar
+    st.button("Log P/L", on_click=log_pl)
+
+    st.date_input("Date of P/L", value=datetime.today(), key='date_input')
 
     # Use a number input for the Daily P/L
     pl_input = st.number_input(
-        "Daily P/L ($)", step=0.01, format="%.2f", value=0.00)
-
-    submitted = st.form_submit_button("Log P/L")
-
-if submitted:
-    # 1. Prepare the new data row to match Google Sheet headers ('Date', 'Amount')
-    new_data = pd.DataFrame([{
-        "Date": date_input.strftime("%Y-%m-%d"),
-        "Amount": pl_input  # 'Amount' is the header in your Google Sheet (B1)
-    }])
-
-    try:
-        # 2. Append the data as a new row to the Google Sheet
-        worksheet.append_row(
-            new_data.iloc[0].tolist(), value_input_option='USER_ENTERED')
-
-        # 3. Clear cache and re-run to update the view with the new data
-        st.cache_data.clear()
-        st.success("Entry logged successfully and saved to Google Sheet!")
-        st.rerun()
-
-    except Exception as e:
-        st.sidebar.error(
-            f"Failed to write to Google Sheet. Check your secrets and sheet permissions. Error: {e}")
+        st.number_input("Daily P/L ($)", step=0.01, format="%.2f", key='pnl_input'), value=0.00)
 
 
 # -----------------------------------------------------------
