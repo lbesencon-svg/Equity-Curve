@@ -41,7 +41,6 @@ def log_pl():
     # 3. Success and Rerun
     st.cache_data.clear()
     st.success("Entry logged successfully and saved to Google Sheet!")
-    st.rerun()
 
 # --- Data Fetching and Caching (Cached for 10 minutes) ---
 
