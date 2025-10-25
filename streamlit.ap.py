@@ -46,32 +46,41 @@ def log_pl():
 
 
 @st.cache_data(ttl=600)
-@st.cache_data(ttl=600)
-def load_data():
+def load_data(cache_key):  # <--- FINAL ARGUMENT IS HERE
     """Loads data from Google Sheet, calculates Equity, and caches the result."""
 
-    # Read the first two columns (Date and Amount/P&L) from Sheet1
-    # Assumes headers are 'Date' in A1 and 'Amount' in B1
+    # 2. Read the data from the sheet
+    # 'worksheet' must be initialized at the top of your script
     data = worksheet.get_all_values()
 
+    # 3. Create the DataFrame (skipping the header row)
+    # Assumes headers are 'date' and 'amount'
     df = pd.DataFrame(data[1:], columns=['date', 'amount'])
 
-    # Convert 'Amount' to numeric, dropping invalid rows
+    # 4. Clean and convert the 'amount' column
     df['amount'] = pd.to_numeric(df['amount'], errors='coerce')
     df.dropna(subset=['amount'], inplace=True)
 
-    # Ensure Date is in datetime format and sort the data
+    # 5. Format the date and sort the data
     df['date'] = pd.to_datetime(df['date'])
-    df = df.sort_values(by='date').reset_index(drop=True)
+    df.sort_values(by='date', reset_index=True, inplace=True)
 
-    # Calculate the cumulative equity curve (using 'amount' as P&L)
+    # 6. Calculate the cumulative equity (required for your chart)
     df['Equity'] = df['amount'].cumsum()
 
     return df
 
-
 # --- Load Data ---
-df = load_data()
+
+
+# 1. Initialize/Retrieve the key (THIS IS THE MISSING PIECE)
+if 'sheet_update_key' not in st.session_state:
+    st.session_state['sheet_update_key'] = 0
+
+update_key = st.session_state['sheet_update_key']
+
+# 2. Call the function ONCE and PASS THE KEY (This fixes Line 75)
+df = load_data(update_key)
 
 # -----------------------------------------------------------
 # Sidebar Form (Daily P/L Entry)
