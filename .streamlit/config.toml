@@ -1,0 +1,3 @@
+[general]
+# Set the Python version explicitly
+python = 3.9
